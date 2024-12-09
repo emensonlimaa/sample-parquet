@@ -1,4 +1,5 @@
-﻿using Parquet;
+﻿using File.Parquet.Builder;
+using Parquet;
 using Parquet.Data;
 using Parquet.Schema;
 
@@ -6,10 +7,13 @@ namespace File.Parquet;
 
 public class ParquetClient
 {
-    public async Task WriteAsync<T>(string filePath, ParquetSchema schema, IList<DataColumn> columns)
+    public async Task WriteAsync<T>(string filePath, ParquetSchemaBuilder schemaBuilder, DataColumnBuilder columnBuilder)
     {
         try
         {
+            ParquetSchema schema = schemaBuilder.Build();
+            IList<DataColumn> columns = columnBuilder.Build();
+
             using Stream fileStream = new BufferedStream(System.IO.File.OpenWrite($"{filePath}.parquet"));
 
             using ParquetWriter parquetWriter = await ParquetWriter.CreateAsync(schema, fileStream);
@@ -28,7 +32,7 @@ public class ParquetClient
         catch (Exception)
         {
             throw;
-        }       
+        }
     }
 
     public async Task<IList<IList<T>>> ReadPageAsync<T>(string filePath, int pageIndex, int pageSize)
@@ -44,7 +48,7 @@ public class ParquetClient
 
             var allRows = new List<IList<T>>();
             int totalRowsRead = 0;
-            int startRow = pageIndex * pageSize;  
+            int startRow = pageIndex * pageSize;
 
             for (int rowGroupIndex = 0; rowGroupIndex < rowGroupCount; rowGroupIndex++)
             {
